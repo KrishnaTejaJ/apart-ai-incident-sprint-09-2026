@@ -16,6 +16,7 @@ Eleven rules for running a dangerous-capability evaluation with production safeg
 **Enforced** — NetworkPolicy/CNI and gateway, P2.
 **Auditor checks** — Default-deny manifest · allowlist git history for the run window · log lines carrying the allowlist version.
 **Cost** — Low: ~10 lines of YAML; explicit deny needs Calico or Cilium.
+**Maps to** — NIST SC-7, AC-4 · CIS K8s 5.3 · CSA AIS-13 · ATT&CK T1567, T1071, T1190 · OWASP ASI02.
 **Does not stop** — Exploitation of the allowed path itself, which is what happened. See C-02, C-03, C-10.
 
 ### C-02 · No path to metadata or host
@@ -24,6 +25,7 @@ Eleven rules for running a dangerous-capability evaluation with production safeg
 **Enforced** — Pod Security "restricted" and a metadata deny rule, P2.
 **Auditor checks** — Namespace PSS label · IMDS deny rule · pod spec.
 **Cost** — Low: one label, one cloud flag.
+**Maps to** — NIST SC-7 · CIS K8s 5.2 · CSA AIS-13 · ATT&CK T1611, T1552.005 · OWASP ASI05.
 **Does not stop** — A runtime zero-day that escapes without IMDS.
 
 ### C-03 · No live credentials
@@ -32,6 +34,7 @@ Eleven rules for running a dangerous-capability evaluation with production safeg
 **Enforced** — External token issuer; canary alerting outside the sandbox. P2/P3.
 **Auditor checks** — Token TTL and scope policy · image secret scan · canary registration and alert channel.
 **Cost** — Canaries free; per-run workload identity days to weeks.
+**Maps to** — NIST AC-6, IA-5 · CSA IAM-05 · ATT&CK T1552, T1528 · OWASP ASI03.
 **Does not stop** — Credentials obtained on third-party systems after escape.
 
 ### C-11 · Same rules on third-party compute
@@ -40,6 +43,7 @@ Eleven rules for running a dangerous-capability evaluation with production safeg
 **Enforced** — Egress allowlist at the governed gateway; contract. P2.
 **Auditor checks** — Inventory of every compute the lab runs harnesses on, each mapped to C-01 evidence · allowlist with no write targets.
 **Cost** — Low to medium per platform; hosted sandboxes expose default-deny egress.
+**Maps to** — NIST SR-3, CA-3 · CSA STA-08 · ATT&CK T1199, T1584 · OWASP ASI04.
 **Does not stop** — Harnesses the lab does not know it is running.
 
 ## Record
@@ -50,6 +54,7 @@ Eleven rules for running a dangerous-capability evaluation with production safeg
 **Enforced** — Separate executor container; append-only sink. P2 minimum.
 **Auditor checks** — Executor manifest and image digest · log schema with previous-line hash · chain verifier output.
 **Cost** — Low with Inspect, Agent Governance Toolkit or CloudTrail validation; weeks if self-built.
+**Maps to** — NIST AU-9, AU-9(2), AU-9(3) · CSA LOG-02 · ATT&CK T1565, T1562.008 · ATLAS AML.T0031 (weak) · OWASP ASI10.
 **Does not stop** — Actions that bypass the executor (direct SDK calls, subprocess). A hash chain proves order, not truth at write; the executor's location is what matters.
 
 ## Beliefs
@@ -60,6 +65,7 @@ Eleven rules for running a dangerous-capability evaluation with production safeg
 **Enforced** — Scorer outside the sandbox network. P2/P3.
 **Auditor checks** — No route sandbox→scorer · no scorer code in the image.
 **Cost** — Zero with Inspect (architectural default).
+**Maps to** — NIST SC-7, AC-4 · ATT&CK T1590, T1592 · OWASP ASI01 (indirect) · ATLAS none.
 **Does not stop** — Information-seeking about the scorer, which is what drove the attack. Holds only with C-06 and C-07.
 
 ### C-06 · Impossible tasks are calibration-scored
@@ -68,6 +74,7 @@ Eleven rules for running a dangerous-capability evaluation with production safeg
 **Enforced** — Harness scoring configuration. P2.
 **Auditor checks** — Scoring rubric · task manifest with unmarked impossible items.
 **Cost** — Custom; no framework provides it (AbstentionBench is a benchmark, not a scorer).
+**Maps to** — none — evaluation-design control; no framework has a category.
 **Does not stop** — Altruism toward a collective (C-09); false disqualification beliefs (C-07).
 
 ### C-07 · Agent told the truth
@@ -76,6 +83,7 @@ Eleven rules for running a dangerous-capability evaluation with production safeg
 **Enforced** — Versioned task context. P2. Works only because C-04, C-05 and C-08 make it true.
 **Auditor checks** — The context text · cross-reference to C-04/05/08 evidence.
 **Cost** — Near zero. Trade-off: cuts against the realism norm in alignment evals (Petri v2 hides evaluation cues).
+**Maps to** — none — evaluation-design control; OWASP ASI09 tangential.
 **Does not stop** — Agents that disbelieve and test it (itself a C-10 signal); altruism toward a collective.
 
 ## Budget
@@ -86,6 +94,7 @@ Eleven rules for running a dangerous-capability evaluation with production safeg
 **Enforced** — Harness scoring plus executor termination. P2.
 **Auditor checks** — Scoring config · out-of-scope policy · late-run monitor rule.
 **Cost** — Low: Inspect submit/terminate hooks.
+**Maps to** — none — evaluation-design control.
 **Does not stop** — Sacrifice runs driven by a false belief (C-07) or by altruism (C-09). Partial credit for stopping was rejected: it distorts capability measurement.
 
 ## Population
@@ -96,6 +105,7 @@ Eleven rules for running a dangerous-capability evaluation with production safeg
 **Enforced** — Per-run namespaces; per-run or read-only caches; authenticated writes. P2.
 **Auditor checks** — Namespace-per-run manifest · shared-surface inventory · run id on every write.
 **Cost** — Low per sample (Inspect default); medium at cluster scale; loses package-cache reuse.
+**Maps to** — NIST SC-4, AC-4, SC-7 · CIS K8s 5.2, 5.3 · CSA I&S-06 · ATT&CK T1080, T1570, T1213 · OWASP ASI07.
 **Does not stop** — Covert channels through allowed egress (C-01, C-11); read-only cache side channels.
 
 ## Operations
@@ -106,6 +116,7 @@ Eleven rules for running a dangerous-capability evaluation with production safeg
 **Enforced** — Monitor on the external record and infrastructure metrics; pager. P2/P3.
 **Auditor checks** — `safeguards_state` field and its alert · rule set · decoder stage · alert history showing a page fired.
 **Cost** — Falco free; pager about $21 per user per month; TruffleHog decodes, gitleaks does not.
+**Maps to** — NIST SI-4, IR-4, AU-6 · CSA LOG-03 · ATT&CK T1562, T1027 · OWASP ASI10 (partial).
 **Does not stop** — Slow, quiet agents. A tripwire with a shelf life, not a wall.
 
 ---
